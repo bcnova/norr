@@ -4,7 +4,7 @@
 <meta charset='utf-8' />
 <link href='./lib/fullcalendar.min.css' rel='stylesheet' />
 <link href='./lib/scheduler.min.css' rel='stylesheet' />
-<link href='./lib/bootstrapmodal.css' rel='stylesheet' />
+<link href='./lib/bootstrap.min.css' rel='stylesheet' />
 <script src='./lib/moment.min.js'></script>
 <script src='./lib/jquery.min.js'></script>
 <script src='./lib/fullcalendar.min.js'></script>
@@ -20,20 +20,24 @@
 			//console.log(nowDate.format() + " " + nowDate.valueOf());
 				//console.log(nowDate.valueOf() + " " + nowDate.dateString());
 				return {
-					start: nowDate.clone().subtract(1, 'week'),
+					start: nowDate.clone().subtract(1, 'day'),
 					end: nowDate.clone().add(1, 'week')
 				};
 			},
 			//defaultDate: '2017-05-07',
+			//theme: true,
+			height: 'auto',
 			editable: true,
 			selectable: true,
+			minTime: '07:00',
+			maxTime: '20:00',
 			scrollTime: '08:00', // undo default 6am scrollTime
 			eventLimit: true, // allow "more" link when too many events
 			eventOverlap: false, // will cause the event to take up entire resource height
 			header: {
-				left: 'prev,next today',
-				center: 'title',
-				right: ''
+				left: 'title',
+				center: '',
+				right: 'prev,next today',
 				//right: 'agendaDay,agendaTwoDay,agendaWeek,month'
 			},
 			views: {
@@ -77,11 +81,22 @@
 				if (start.isBefore(moment().startOf('day')))
 					return;
 				
-				$('#modalDelete').attr('onclick', "");
 				$('#modalTitle').html("New Event");
-				$("#modalStartTime").html(start.format('MMM Do h:mm A'));
-				$("#modalEndTime").html(end.format('MMM Do h:mm A'));
+				
+				$('.modal-block input').toggleClass("hide-outline", false)
+					.prop('disabled', false);
+
+				$('#modalEventOwner').val('');
+				$('#modalEventGroup').val('');
+				$('#modalRoom').html($("#calendar").fullCalendar("getResourceById", resource.id).title);
+				$('#modalStartTime').html(start.format('MMM Do h:mm A'));
+				$('#modalEndTime').html(end.format('MMM Do h:mm A'));
 				$('#modalEventResourceId').attr('value', resource.id);
+				$('#modalEventId').attr('value', '0');
+				<!-- $('#modalSave').toggleClass("hide-element", false); -->
+				<!-- $('#modalDelete').toggleClass("hide-element", true); -->
+				$('#modalSave').show();
+				$('#modalDelete').hide();
 				$('#fullCalModal').modal();
 			},
 			
@@ -94,11 +109,23 @@
 
 				//console.log("event id: "+calEvent.id);
 				//$('#modalDelete').attr('onclick', "onDeleteEvent("+calEvent.id+")");
+				$('#modalTitle').html(calEvent.title);
 				$('#modalEventId').attr('value', calEvent.id);
 				$('#modalEventResourceId').attr('value', calEvent.resourceId);
-				$('#modalDelete').attr('onclick', "onDeleteEvent()");
-				$('#modalSave').attr('onclick', "onSaveEvent()");
-				$('#modalTitle').html(calEvent.title);
+				
+				
+				$('.modal-block input').toggleClass("hide-outline", true)
+					.prop('disabled', true);
+				$('#modalEventOwner').val(calEvent.owner);
+				$('#modalEventGroup').val(calEvent.group);
+				$('#modalRoom').html($("#calendar").fullCalendar("getResourceById", calEvent.resourceId).title);
+				//$('#modalDelete').attr('onclick', "onDeleteEvent()");
+				//$('#modalSave').attr('onclick', "onSaveEvent()");
+				//$('#modalSave').toggleClass("hide-element", true);
+				//$('#modalDelete').toggleClass("hide-element", false);
+				$('#modalSave').hide();
+				$('#modalDelete').show();
+				
 				$("#modalStartTime").html(calEvent.start.format('MMM Do h:mm A'));
 				$("#modalEndTime").html(calEvent.end.format('MMM Do h:mm A'));
 				$('#fullCalModal').modal();
@@ -108,13 +135,13 @@
 			eventDrop: function(event, delta, revertFunc) {
 
 				//alert(event.title + " was dropped on " + event.start.format());
-				console.log(event);
-				console.log(event.end.isAfter(moment()));
-				console.log(event.end.isBefore(moment()));
-				console.log(event.end.format());
-				console.log(event.end);
-				console.log(moment());
-				console.log(moment().format("YYYY-MM-DDTHH:mm:ss"));
+				//console.log(event);
+				//console.log(event.end.isAfter(moment()));
+				//console.log(event.end.isBefore(moment()));
+				//console.log(event.end.format());
+				//console.log(event.end);
+				//console.log(moment());
+				//console.log(moment().format("YYYY-MM-DDTHH:mm:ss"));
 				if (event.end.isBefore(moment())) {
 					revertFunc();
 					//$('#fullCalModal').modal('hide');
@@ -131,19 +158,15 @@
 				{
 					var eventJson = {};
 					eventJson["id"] = calData.id;
-					if (event.id == calData.id) {
-						eventJson["resourceId"] = event.resourceId;
-						eventJson["start"] = event.start.format();
-						eventJson["end"] = event.end.format();
-					} else {
-						eventJson["resourceId"] = calData.resourceId;
-						eventJson["start"] = calData.start._i;
-						eventJson["end"] = calData.end._i;
-					}
+					eventJson["resourceId"] = event.id == calData.id ? event.resourceId : calData.resourceId;
+					eventJson["owner"] = calData.owner;
+					eventJson["group"] = calData.group;
+					eventJson["start"] = event.id == calData.id ? event.start.format() : calData.start._i;
+					eventJson["end"] = event.id == calData.id ? event.end.format() : calData.end._i;
 					eventJson["title"] = calData.title;
 					calendarJson.push(eventJson);
 				});
-				console.log(calendarJson);
+				//console.log(calendarJson);
 				updateSource(calendarJson);
 
 			}, 
@@ -166,13 +189,10 @@
 					var eventJson = {};
 					eventJson["id"] = calData.id;
 					eventJson["resourceId"] = calData.resourceId;
-					if (event.id == calData.id) {
-						eventJson["start"] = event.start.format();
-						eventJson["end"] = event.end.format();
-					} else {
-						eventJson["start"] = calData.start._i;
-						eventJson["end"] = calData.end._i;
-					}
+					eventJson["owner"] = calData.owner;
+					eventJson["group"] = calData.group;
+					eventJson["start"] = event.id == calData.id ? event.start.format() : calData.start._i;
+					eventJson["end"] = event.id == calData.id ? event.end.format() : calData.end._i;
 					eventJson["title"] = calData.title;
 					calendarJson.push(eventJson);
 				});
@@ -187,7 +207,10 @@
 		});
 		
 
-	
+		$('#fullCalModal').on('hidden.bs.modal', function () {
+          //window.alert('hidden event fired!');
+		  $('.requiredWarning').toggleClass("hide-element", true);
+		});
 	});
 	
 	function updateSource(calendarJson) {
@@ -214,7 +237,12 @@
 		//	$('#fullCalModal').modal('hide');
 		//	return;
 		//}
-		console.log("deleting event " + document.getElementById('modalEventId').value);
+		
+		if (!confirm("Are you sure to delete '" + $('#modalTitle').html() + "' event?")) {
+			return;
+		}
+		
+		//console.log("deleting event " + document.getElementById('modalEventId').value);
 		
 		var calendarJson = [];
 		var calendarData = $('#calendar').fullCalendar('clientEvents');
@@ -224,6 +252,8 @@
 				var eventJson = {};
 				eventJson["id"] = event.id;
 				eventJson["resourceId"] = event.resourceId;
+				eventJson["owner"] = event.owner;
+				eventJson["group"] = event.group;				
 				eventJson["start"] = event.start._i;
 				eventJson["end"] = event.end._i;
 				eventJson["title"] = event.title;
@@ -237,17 +267,30 @@
 	};
 	function onSaveEvent() {
 		console.log("save event ");
+		
+		//console.log($('#modalEventOwner').val() == "");
+		if ( ($('#modalEventOwner').val() == "") || ($('#modalEventGroup').val() == "") ) {
+			//console.log("in test");
+			$('#modalEventOwnerWarning').toggleClass("hide-element", $('#modalEventOwner').val() != "");
+			$('#modalEventGroupWarning').toggleClass("hide-element", $('#modalEventGroup').val() != "");
+			$('#fullCalModal').modal();
+			//console.log("out test");
+			return;
+		}
+		$('.requiredWarning').toggleClass("hide-element", true);
 		var calendarJson = [];
 		
-		var last7DayStart = moment().startOf('day').subtract(1,'week');
+		var last7DayStart = moment().startOf('day').subtract(1,'day');
 		var next7DayEnd = moment().startOf('day').add(1,'week');
 		
 		var eventJson = {};
 		eventJson["id"] = "0";
 		eventJson["resourceId"] = $('#modalEventResourceId').val();	
+		eventJson["owner"] = $('#modalEventOwner').val();
+		eventJson["group"] = $('#modalEventGroup').val();
 		eventJson["start"] = moment($("#modalStartTime").html(), 'MMM Do h:mm A').format("YYYY-MM-DDTHH:mm:ss");
 		eventJson["end"] = moment($("#modalEndTime").html(), 'MMM Do h:mm A').format("YYYY-MM-DDTHH:mm:ss");
-		eventJson["title"] = $('#modalTitle').html();
+		eventJson["title"] = eventJson["group"] + " (" +eventJson["owner"] + ")";
 
 		console.log(eventJson["start"])
 		var calendarData = $('#calendar').fullCalendar('clientEvents');
@@ -255,10 +298,12 @@
 		calendarData.forEach(function(event) 
 		{
 			if (event.end.isBetween(last7DayStart, next7DayEnd)) {
-				console.log("add");
+				//console.log("add");
 				var eventJson = {};
 				eventJson["id"] = event.id;
 				eventJson["resourceId"] = event.resourceId;
+				eventJson["owner"] = event.owner;
+				eventJson["group"] = event.group;				
 				eventJson["start"] = event.start._i;
 				eventJson["end"] = event.end._i;
 				eventJson["title"] = event.title;
@@ -271,6 +316,8 @@
 
 		updateSource(calendarJson);
 	};
+		
+
 </script>
 <style>
 
@@ -280,19 +327,45 @@
 		font-family: "Lucida Grande",Helvetica,Arial,Verdana,sans-serif;
 		font-size: 14px;
 	}
-
+	.modal-block label { 
+		display: inline-block; 
+		width: 100px; 
+		text-align: right; 
+	}
+	.modal-block input:disabled{
+		background-color:white;
+	}
+	
+	.hide-outline {
+		outline: none;
+		box-shadow: none;
+		border: none;
+	}
+	.hide-element {
+		visibility: hidden;
+	}
+	.display-none {
+		display:none;
+	}
+	
+	.requiredWarning {
+		color: red;
+	}
+	
 	#calendar {
 		max-width: 900px;
 		margin: 50px auto;
 	}
 
 </style>
+<title>NOVA Room Reservation</title>
 </head>
 <body>
+  <div class="text-center"><h1>NOVA Room Reservation</h1></div>
 
 	<div id='calendar'></div>
 
-<div id="fullCalModal" class="modal fade">
+<div id="fullCalModal" class="modal fade" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -302,20 +375,44 @@
 			<div id="modalBody" class="modal-body">
 				<input type="hidden" id="modalEventId" value="">
 				<input type="hidden" id="modalEventResourceId" value="">
-				Name: <input type="text" id="modalEventOwner" required> <br>
-				Start: <span id="modalStartTime"></span><br><br>
-				End: <span id="modalEndTime"></span>
+				<div class="modal-block">
+					<label>Name: </label>
+					<input type="text" id="modalEventOwner">
+					<span id="modalEventOwnerWarning" class="requiredWarning hide-element">* required</span>
+				</div>
+				<div class="modal-block">
+					<label>Group: </label>
+					<input type="text" id="modalEventGroup">
+					<!-- <select> -->
+						<!-- <option value="Healthcare">Healthcare</option> -->
+						<!-- <option value="ePCS">ePCS</option> -->
+						<!-- <option value="Java">Java</option> -->
+					<!-- </select> -->
+					<span id="modalEventGroupWarning" class="requiredWarning hide-element">* required</span>
+				</div>
+				<div class="modal-block">
+					<label>Room: </label>
+					<span id="modalRoom"></span>
+				</div>
+				<div class="modal-block">
+					<label>Start: </label>
+					<span id="modalStartTime"></span>
+				</div>
+				<div class="modal-block">
+					<label>End: </label>
+					<span id="modalEndTime"></span>
+				</div>				
 			</div>
 
             <div class="modal-footer">
                 <!--<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>-->
-				<button id="modalDelete" class="btn btn-default" onclick="">Delete</a></button>
+				<button id="modalDelete" class="btn btn-default" onclick="onDeleteEvent()">Delete</button>
                 <button id="modalSave" class="btn btn-primary" onclick="onSaveEvent()">Save</button>
             </div>
         </div>
     </div>
 </div>
-	
+	<div class="footer text-center">resize event to extend schedule. drag to move time and room.</div>
 	
 </body>
 </html>
