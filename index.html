@@ -13,9 +13,7 @@
 <script src='./lib/scheduler.min.js'></script>
 <script src='./lib/bootstrapmodal.min.js'></script>
 <script>
-
 	$(function() { // document ready
-
 		$('#calendar').fullCalendar({
 			defaultView: 'agendaDay',
 			validRange: function(nowDate) {
@@ -29,7 +27,7 @@
 			selectable: true,
 			minTime: '07:00',
 			maxTime: '20:00',
-			scrollTime: '07:00', // undo default 6am scrollTime
+			scrollTime: '07:00',
 			eventLimit: true, // allow "more" link when too many events
 			eventOverlap: false, // will cause the event to take up entire resource height
 			header: {
@@ -58,7 +56,6 @@
 			},			
 			select: function(start, end, jsEvent, view, resource) {
 				if (start.isBefore(moment().startOf('day'))) return;
-				
 				$('#modalTitle').html("New Event");
 				$('.modal-block input').toggleClass("hide-outline", false)
 					.prop('disabled', false);
@@ -69,12 +66,10 @@
 				$('#modalEndTime').html(end.format('MMM Do h:mm A'));
 				$('#modalEventResourceId').attr('value', resource.id);
 				$('#modalEventId').attr('value', '0');
-
 				$('#modalSave').show();
 				$('#modalDelete').hide();
 				$('#fullCalModal').modal();
 			},
-			
 			eventClick: function(calEvent, jsEvent, view) {
 				$('#modalTitle').html(calEvent.title);
 				$('#modalEventId').attr('value', calEvent.id);
@@ -91,7 +86,6 @@
 				$('#modalDelete').show();
 				$('#fullCalModal').modal();
 			},
-			
 			eventDrop: function(event, delta, revertFunc) {
 				if (event.end.isBefore(moment())) {
 					revertFunc();
@@ -101,7 +95,6 @@
 					revertFunc();
 					return;
 				}
-				
 				var calendarJson = [];
 				var calendarData = $('#calendar').fullCalendar('clientEvents');
 				calendarData.forEach(function(calData) 
@@ -143,16 +136,11 @@
 				});
 				updateSource(calendarJson);	
 			}
-			
-			
 		});
-		
-
 		$('#fullCalModal').on('hidden.bs.modal', function () {
 		  $('.requiredWarning').toggleClass("hide-element", true);
 		});
 	});
-	
 	function updateSource(calendarJson) {
 		$.ajax({
 			url:"https://api.myjson.com/bins/15zkpf",
@@ -166,7 +154,6 @@
 			}
 		}); 
 	};
-	
 	function onDeleteEvent() {
 		if (!confirm("Are you sure to delete '" + $('#modalTitle').html() + "' event?")) {
 			return;
@@ -235,16 +222,12 @@
 
 		updateSource(calendarJson);
 	};
-		
-
 </script>
 
 </head>
 <body>
-  <div class="text-center"><h1>NOVA Room Reservation</h1></div>
-
-	<div id='calendar'></div>
-
+<div class="text-center"><h1>NOVA Room Reservation</h1></div>
+<div id='calendar'></div>
 <div id="fullCalModal" class="modal fade" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -263,11 +246,6 @@
 				<div class="modal-block">
 					<label>Group: </label>
 					<input type="text" id="modalEventGroup">
-					<!-- <select> -->
-						<!-- <option value="Healthcare">Healthcare</option> -->
-						<!-- <option value="ePCS">ePCS</option> -->
-						<!-- <option value="Java">Java</option> -->
-					<!-- </select> -->
 					<span id="modalEventGroupWarning" class="requiredWarning hide-element">* required</span>
 				</div>
 				<div class="modal-block">
@@ -283,16 +261,13 @@
 					<span id="modalEndTime"></span>
 				</div>				
 			</div>
-
             <div class="modal-footer">
-                <!--<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>-->
 				<button id="modalDelete" class="btn btn-default" onclick="onDeleteEvent()">Delete</button>
                 <button id="modalSave" class="btn btn-primary" onclick="onSaveEvent()">Save</button>
             </div>
         </div>
     </div>
 </div>
-	<div class="footer text-center">resize event to extend schedule. drag to move time and room.</div>
-	
+<div class="footer text-center">resize event to extend schedule. drag to move time and room.</div>
 </body>
 </html>
