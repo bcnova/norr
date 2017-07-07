@@ -19,7 +19,7 @@
 			validRange: function(nowDate) {
 				return {
 					start: nowDate.clone().startOf('day').subtract(1, 'day'),
-					end: nowDate.clone().add(1, 'week')
+					end: nowDate.clone().endOf('day').add(1, 'week')
 				};
 			},
 			height: 'auto',
